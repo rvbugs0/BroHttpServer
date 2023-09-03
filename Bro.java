@@ -1,3 +1,9 @@
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.ServerSocket;
+import java.net.Socket;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -22,8 +28,14 @@ class Validator {
 
 class Error {
 
+  private String error;
+
+  public Error(String error) {
+    this.error = error;
+  }
+
   public boolean hasError() {
-    return false;
+    return this.error.length() > 0;
   }
 
   public String getError() {
@@ -35,7 +47,7 @@ class Request {}
 
 class Response {
 
-  private StringBuilder content= new StringBuilder();
+  private StringBuilder content = new StringBuilder();
   private String contentType;
 
   public void setContentType(String contentType) {
@@ -44,7 +56,11 @@ class Response {
     } else {}
   }
 
-  public void append(String content) {}
+  public void append(String text) {
+    if (text != null) {
+      content.append(text);
+    }
+  }
 }
 
 class Bro {
@@ -68,7 +84,51 @@ class Bro {
     }
   }
 
-  public void listen(int portnumber, Consumer<Error> operation) {}
+  public void listen(int portnumber, Consumer<Error> operation) {
+    try {
+      ServerSocket serverSocket = new ServerSocket(portnumber);
+      Error error = new Error("");
+      operation.accept(error);
+      while (true) {
+        try {
+          Socket clientSocket = serverSocket.accept();
+          System.out.println(
+            "Connected client: " +
+            clientSocket.getInetAddress().getHostAddress()
+          );
+          BufferedReader reader = new BufferedReader(
+            new InputStreamReader(clientSocket.getInputStream())
+          );
+          String line = null;
+          PrintWriter writer = new PrintWriter(
+            (clientSocket.getOutputStream())
+          );
+          while ((line = reader.readLine()) != null && !line.isEmpty()) {
+            System.out.println(line);
+          }
+          // String respHTML = "<html><head><title>BroServer</title></head><body><h1>Hello from BroServer</h1></body></html>";
+          String resp = "HTTP/1.1 200 OK\r\n";
+          resp += "Connection: close\r\n";
+          resp += "Content-Type: text/html\r\n";
+          resp += "Content-Length: 92\r\n\r\n";
+          resp +=
+            "<html><head><title>BroServer</title></head><body><h1>Hello from BroServer</h1></body></html>";
+
+          writer.println(resp);
+
+          writer.close();
+          reader.close();
+          clientSocket.close();
+        } catch (Exception e) {
+          error = new Error(e.toString());
+          operation.accept(error);
+        }
+      }
+    } catch (Exception exception) {
+      Error error = new Error(exception.toString());
+      operation.accept(error);
+    }
+  }
 }
 
 class WebDev {
