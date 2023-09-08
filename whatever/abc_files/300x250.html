@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<!-- saved from url=(0075)https://dco-assets.everestads.net/ics-campaign//5031/t/8819/11/300x250.html -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <title>Ad</title>
+    <link rel="stylesheet" href="./style.min.css">
+    <script type="text/javascript" src="./AMOLibrary.js"></script>
+    <script src="./script.min.js" charset="utf-8"></script>
+    <style media="screen">
+      @font-face {
+          font-family: SegoePro-Semibold;
+          src: url('SegoePro-Semibold.woff') format("woff");
+      }
+      .segoeProSemibold { font-family: SegoePro-Semibold; }
+    </style>
+    <!--
+      Available Classes:-
+        For Images :-
+          .asset        -Image Center Align(Image can shrink according to the container but will expand beyond its original size)
+          .asset-top    -Image Top Center Align(Image can shrink according to the container but will expand beyond its original size)
+          .asset-left
+
+    -->
+    <style media="screen">
+      #ad {
+        width: 300px;
+        height: 250px;
+        font-family: Arial,Helvetica,sans-serif;
+        background-color: #fff;
+      }
+      #cta { background-color: transparent; }
+      #cta:hover { background-color: transparent; }
+    </style>
+  </head>
+  <body data-new-gr-c-s-check-loaded="14.1123.0" data-gr-ext-installed="">
+    <div class="" id="ad"><div id="backgroundImage" class="asset" style="top:0px;left:0px;width:inherit;height:inherit;"><img src="./ff6b9e3c736557223fa0f4bfde240dc7.png"></div><!-- <div id="ref" class="asset" data-image="ref" style="top:0px; left:0px; width:inherit; height:inherit;"></div> --><div id="headline" dir="auto" class="text-top-left segoeProSemibold" style="top: 61px; left: 15px; width: 265px; height: 140px; font-size: 22px; line-height: 1.2; letter-spacing: -0.5px; color: rgb(0, 0, 0);"><span><font style="display:inline-block;min-height:20px;width:100%;" id="headlineElem"><font style="color:#ffffff;">Build your next great app with pay-as-you-go pricing</font></font><font style="display:inline-block;font-size:54%;padding-top:10px;" id="subHeadlineElem"><font style="color:#ffffff;">Get started with 55+ free services.</font></font></span></div><!-- <div id="subHeadline" class="text-left segoeProSemibold" data-style="text-align:left;" data-text="subHeadline" style="top:104px; left:19px; width:270px; height:60px; font-size:15px; letter-spacing:0.2px; line-height:18px; font-weight:bold; color:#FFF;"></div> --><div id="cta" dir="auto" class="text-left segoeProSemibold" data-style="text-align:left;" style="top:205px; left:13px; width:250px; height:20px; font-size:14px; color:#0078d3;"><span style="text-align:left;" id="ctaTextElem"><font style="color:#ffffff;">Sign up ❯</font></span></div><div id="overlay" style="top: 0px; left: 0px; width: inherit; height: inherit; background-color: rgb(255, 255, 255); opacity: 0; transition: all 0.5s ease 0s; visibility: hidden;"></div><div class="ad-borders"><div class="ad-border-top" style="position:absolute;display:inline-block;width:300px;border-top:1px solid #000;top:0px;left:0px;"></div><div class="ad-border-right" style="position:absolute;display:inline-block;height:250px;border-left:1px solid #000;top:0px;left:299px;"></div><div class="ad-border-bottom" style="position:absolute;display:inline-block;width:300px;border-top:1px solid #000;top:249px;left:0px;"></div><div class="ad-border-left" style="position:absolute;display:inline-block;height:250px;border-left:1px solid #000;top:0px;left:0px;"></div></div></div>
+    <div id="loadFont" style="width:0;height:0;overflow:hidden;">
+      <div class="segoeProSemibold" style="color:transparent;">segoeProSemibold</div>
+    </div>
+    <script type="text/javascript">
+      var ad = new Ad({
+        root: document.querySelector('#ad'),
+        width: 300,
+        height: 250,
+        borderWidth: 1,
+        borderColor: '#000'
+      });
+      setTimeout(function() {
+        ad.contentSetup({
+          cam: {
+            backgroundImage: 'assets/RT-Refresh_300x250_Color1.png',
+            headline: "Pay only for the services your business needs|25",
+            subHeadline: "Get started with 12 months of<br>free popular services.",
+            ctaText: 'Finish signing up for Azure &amp;#x276F;',//"Your $200 credit awaits",
+            clickURL: 'https://www.adobe.com/',
+            impressionTracker: 'images/1x1.png'
+          },
+          feed: [
+            {
+              name: 'ms',
+            }
+          ],
+          staticData: {
+            // ref:'ref.png',
+          },
+          beforeLoad: function(data){
+            var replaceMacro = function(text, data) {
+              var macros = text.match(/\!\{(.*?)\}/g);
+              if(macros) {
+                macros.forEach(function(macro){
+                  var macroText = macro.split('!{').join('').split('}').join('');
+                  for(var key in data) { if(key == macroText) { macroText = data[key]; } }
+                  text = text.split(macro).join(macroText);
+                });
+              }
+              return text;
+            }
+            data.map(function(content){
+              content.subHeadline = content.subHeadline.split('|')[0];
+              if(content.headline.split('|').length > 1) {
+                  var fontSize = content.headline.split('|')[1];
+                  content.headline = content.headline.split('|')[0];
+                  if(fontSize)ad.root.querySelector('#headline').style.fontSize = fontSize + 'px';
+              }
+              content.ctaText = content.ctaText.replace('&amp;#x276F;','&#x276F;');
+            });
+            return data;
+          }
+        }, function(data){
+          var adData = data[0], adClickUrl = adData['clickUrl'];
+          let elemText = document.querySelector('#cta span');
+          elemText.id = 'ctaTextElem';
+          ad.root.addEventListener("click", function(e) {
+            let elemText = getElementText(adData, e);
+            if('button' in e.target.dataset) { } else { amo.onDynAdClick(adData.feedData, "CLICK", adClickUrl, elemText); }
+          });
+          if(adData.impressionTracker.toLowerCase() != 'na'){
+            var impressionTracker = adData.impressionTracker.split('^')[0];
+            var isn = 'data' in amo && 'isn' in amo.data ? amo.data.isn : '';
+            var trackingCode = 'data' in amo && 'data' in amo.data && 'atsParams' in amo.data.data && 'x2_tracking_code_5' in amo.data.data.atsParams ? amo.data.data.atsParams.x2_tracking_code_5 : '';
+            if(isn.length) { impressionTracker = impressionTracker.replace('(t_td_isn)', isn); }
+            if(trackingCode.length){ impressionTracker = impressionTracker.replace('$(t_qp_TC_5)', trackingCode); }
+            ad.loadAssets(impressionTracker, function(assets){ });
+          }
+          if(adData.impressionTracker.indexOf('^') != -1){
+            var impressionTrackerAAM = adData.impressionTracker.split('^')[1];
+            var isn = 'data' in amo && 'isn' in amo.data ? amo.data.isn : '';
+            var trackingCode = 'data' in amo && 'data' in amo.data && 'atsParams' in amo.data.data && 'x2_tracking_code_5' in amo.data.data.atsParams ? amo.data.data.atsParams.x2_tracking_code_5 : '';
+            if(isn.length) { impressionTrackerAAM = impressionTrackerAAM.replace('(t_td_isn)', isn); }
+            if(trackingCode.length){ impressionTrackerAAM = impressionTrackerAAM.replace('$(t_qp_TC_5)', trackingCode); }
+            ad.loadAssets(impressionTrackerAAM, function(assets){ });
+          }
+          if(adData['subHeadline'].toLowerCase() == 'na' || adData['subHeadline'].toLowerCase() == '&#32;') {
+            ad.layers.headline.querySelector('span font:nth-child(2)').style.display = 'none';
+          }
+          ad.layers.cta.style.webkitTransform = '';
+          ad.layers.cta.style.transform = '';
+          // ad.layers.cta.style.backgroundColor = '#ff0000';
+          function getElementText(adData, event) {
+            let elemID = event.target.id || event.target.parentElement.id || event.target.parentElement.parentElement.id;
+            switch(elemID) {
+              case 'headlineElem':
+              return `Headline|${(adData.display_advertiser_category_name !== undefined) ? adData.display_advertiser_category_name : 'Gen_Free Account_BuildNextAppWPayG_Start55plusFree|Blue'}`;
+              break;
+
+              case 'subHeadlineElem':
+              return `SubHeadline|${(adData.display_advertiser_category_name !== undefined) ? adData.display_advertiser_category_name : 'Gen_Free Account_BuildNextAppWPayG_Start55plusFree|Blue'}`;
+              break;
+
+              case 'ctaTextElem':
+              return `CTA|${adData.ctaText}`;
+              break;
+
+              default:
+              return `Background|${(adData.display_advertiser_category_name !== undefined) ? adData.display_advertiser_category_name : 'Gen_Free Account_BuildNextAppWPayG_Start55plusFree|Blue'}`;
+            }
+          }
+        });
+      }, 1000);
+    </script>
+  
+
+</body><grammarly-desktop-integration data-grammarly-shadow-root="true"><template shadowrootmode="open"><style>
+      div.grammarly-desktop-integration {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        padding: 0;
+        margin: -1px;
+        overflow: hidden;
+        clip: rect(0, 0, 0, 0);
+        white-space: nowrap;
+        border: 0;
+        -moz-user-select: none;
+        -webkit-user-select: none;
+        -ms-user-select:none;
+        user-select:none;
+      }
+
+      div.grammarly-desktop-integration:before {
+        content: attr(data-content);
+      }
+    </style><div aria-label="grammarly-integration" role="group" tabindex="-1" class="grammarly-desktop-integration" data-content="{&quot;mode&quot;:&quot;full&quot;,&quot;isActive&quot;:true,&quot;isUserDisabled&quot;:false}"></div></template></grammarly-desktop-integration></html>

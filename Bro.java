@@ -1,6 +1,10 @@
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileReader;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -9,6 +13,59 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+
+class FileSystemUtility {
+
+  private FileSystemUtility() {}
+
+  public static boolean fileExists(String path) {
+    File f = new File(path);
+    return f.exists();
+  }
+
+  public static boolean directoryExists(String path) {
+    File f = new File(path);
+    return f.exists() && f.isDirectory();
+  }
+}
+
+class BroUtilities {
+
+  private BroUtilities() {}
+
+  public static Map<String, String> loadMIMETypes() {
+    Map<String, String> mimeTypes = new HashMap<String, String>();
+    File file;
+    BufferedReader reader;
+    try {
+      file = new File("bro-data/mime.types.txt");
+      if (file.exists()) {
+        reader = new BufferedReader(new FileReader("bro-data/mime.types.txt"));
+        String line = null;
+        while ((line = reader.readLine()) != null) {
+          if (line.startsWith("#")) {
+            continue;
+          }
+          String splits[] = line.split("\t");
+
+          String types[] = splits[1].trim().split(" ");
+
+          for (int i = 0; i < types.length; i++) {
+            mimeTypes.put(types[i].trim(), splits[0].trim());
+            // System.out.println(mimeTypes.get(types[i].trim()));
+          }
+        }
+        reader.close();
+      } else {
+        System.out.println("loadMIMETypes() -- File does not exist");
+        // throw new Exception("loadMIMETypes() -- File does not exist");
+      }
+    } catch (Exception e) {
+      System.out.println("loadMIMETypes() -- " + e);
+    }
+    return mimeTypes;
+  }
+}
 
 class HttpResponseUtility {
 
@@ -158,7 +215,7 @@ class Validator {
   }
 
   public static boolean isValidPath(String path) {
-    return true;
+    return FileSystemUtility.directoryExists(path);
   }
 
   public static boolean isValidURLFormat(String url) {
@@ -217,15 +274,25 @@ class Response {
 class Bro {
 
   private String staticResourcesFolder;
-
+  Map<String, String> mimeTypes;
   Map<String, URLMapping> urlMappings = new HashMap<>();
 
-  public Bro() {}
+  public Bro() {
+    mimeTypes = BroUtilities.loadMIMETypes();
+    if (mimeTypes.size() == 0) {
+      // throw new Exception("bro-data/mime.types has been tampered with.");
+    }
+  }
 
-  public void setStaticResourcesFolder(String folderName) {
+  public void setStaticResourcesFolder(String folderName) throws Exception {
     if (Validator.isValidPath(folderName)) {
       this.staticResourcesFolder = folderName;
-    } else {}
+    } else {
+      throw new Exception(
+        "setStaticResourcesFolder(): --- Invalid static resources path: " +
+        folderName
+      );
+    }
   }
 
   public void get(String url, BiConsumer<Request, Response> operation) {
@@ -236,6 +303,46 @@ class Bro {
         new URLMapping(URLMapping.__request_method__.GET, operation)
       );
     }
+  }
+
+  private boolean serveStaticResource(Socket clientSocket, String url)
+    throws Exception {
+    if (this.staticResourcesFolder.length() == 0) {
+      System.out.println("returning false - 1");
+      return false;
+    }
+    if (!FileSystemUtility.directoryExists(this.staticResourcesFolder)) {
+      System.out.println("returning false - 2");
+      return false;
+    }
+    String resourcePath = this.staticResourcesFolder + url;
+    System.out.println("Static Resource path is: " + resourcePath);
+    if (!FileSystemUtility.fileExists(resourcePath)) {
+      System.out.println("returning false - 3");
+      return false;
+    }
+    File file = new File(resourcePath);
+    if (file.length() == 0) {
+      System.out.println("returning false - 4");
+      return false;
+    }
+    System.out.println("File size is: " + file.length());
+    String header =
+      "HTTP/1.1 200 OK\r\nContent-Type:image/jpg\r\nConnection:close\r\nContent-Length:" +
+      file.length() +
+      "\r\n\r\n";
+    OutputStream outputStream = clientSocket.getOutputStream();
+    outputStream.write(header.getBytes());
+    int count = 0;
+    byte[] buffer = new byte[4096];
+    FileInputStream inputStream = new FileInputStream(file);
+
+    while ((count = inputStream.read(buffer)) != -1) {
+      outputStream.write(buffer, 0, count);
+    }
+    inputStream.close();
+    outputStream.close();
+    return true;
   }
 
   public void listen(int portnumber, Consumer<Error> operation) {
@@ -327,8 +434,10 @@ class Bro {
           String url = splits[1];
           if (!urlMappings.containsKey(url)) {
             //404
+            if (!serveStaticResource(clientSocket, url)) {
+              HttpErrorStatusUtility.sendNotFoundError(clientSocket, url);
+            }
 
-            HttpErrorStatusUtility.sendNotFoundError(clientSocket, url);
             System.out.println("Client socket closed -5");
             clientSocket.close();
             continue;
@@ -352,11 +461,10 @@ class Bro {
           Request request = new Request(methodName, url, protocol);
           Response response = new Response();
           urlMapping.getMappedFunction().accept(request, response);
-          System.out.println("Hello");
+
           HttpResponseUtility.sendResponse(clientSocket, response);
           // clientSocket.close();
         } catch (Exception e) {
-          System.out.println("Printing :" + e);
           error = new Error(e.getMessage());
           operation.accept(error);
         }
@@ -372,13 +480,21 @@ class Bro {
 class WebDev {
 
   public static void main(String gg[]) {
-    Bro bro = new Bro();
-    bro.setStaticResourcesFolder("whatever");
-    bro.get(
-      "/",
-      (Request request, Response response) -> {
-        String html =
-          """
+    try {
+      Bro bro = new Bro();
+
+      try {
+        bro.setStaticResourcesFolder("whatever");
+      } catch (Exception e) {
+        System.out.println(e);
+        System.exit(0);
+      }
+
+      bro.get(
+        "/",
+        (Request request, Response response) -> {
+          String html =
+            """
             <html lang="en">
             <head>
                 <meta charset="UTF-8" />
@@ -392,16 +508,16 @@ class WebDev {
             </body>
             </html>
             """;
-        response.setContentType("text/html");
-        response.append(html);
-      }
-    );
+          response.setContentType("text/html");
+          response.append(html);
+        }
+      );
 
-    bro.get(
-      "/getCustomers",
-      (Request request, Response response) -> {
-        String html =
-          """
+      bro.get(
+        "/getCustomers",
+        (Request request, Response response) -> {
+          String html =
+            """
             <!DOCTYPE html>
             <html lang="en">
             <head>
@@ -418,22 +534,25 @@ class WebDev {
             </body>
             </html>
         """;
-        response.setContentType("text/html");
-        response.append(html);
-      }
-    );
-
-    bro.listen(
-      6060,
-      (Error error) -> {
-        if (error.hasError()) {
-          System.out.println("Error: " + error);
-          return;
+          response.setContentType("text/html");
+          response.append(html);
         }
-        System.out.println(
-          "Bro HTTP Server is ready to accept request on port 6060"
-        );
-      }
-    );
+      );
+
+      bro.listen(
+        6060,
+        (Error error) -> {
+          if (error.hasError()) {
+            System.out.println("Error: " + error);
+            return;
+          }
+          System.out.println(
+            "Bro HTTP Server is ready to accept request on port 6060"
+          );
+        }
+      );
+    } catch (Exception e) {
+      System.out.println(e);
+    }
   }
 }
