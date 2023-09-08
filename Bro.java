@@ -27,6 +27,17 @@ class FileSystemUtility {
     File f = new File(path);
     return f.exists() && f.isDirectory();
   }
+
+  public static String getFileExtension(String path) {
+    System.out.println("path is: " + path);
+    int lastDotIndex = path.lastIndexOf(".");
+    if (lastDotIndex != -1) {
+      String extension = path.substring(lastDotIndex + 1, path.length());
+
+      return extension.toLowerCase();
+    }
+    return null;
+  }
 }
 
 class BroUtilities {
@@ -46,7 +57,11 @@ class BroUtilities {
           if (line.startsWith("#")) {
             continue;
           }
-          String splits[] = line.split("\t");
+
+          String splits[] = {
+            line.substring(0, line.indexOf("\t")),
+            line.substring(line.indexOf("\t"), line.length()),
+          };
 
           String types[] = splits[1].trim().split(" ");
 
@@ -277,10 +292,10 @@ class Bro {
   Map<String, String> mimeTypes;
   Map<String, URLMapping> urlMappings = new HashMap<>();
 
-  public Bro() {
+  public Bro() throws Exception {
     mimeTypes = BroUtilities.loadMIMETypes();
     if (mimeTypes.size() == 0) {
-      // throw new Exception("bro-data/mime.types has been tampered with.");
+      throw new Exception("bro-data/mime.types has been tampered with.");
     }
   }
 
@@ -326,9 +341,18 @@ class Bro {
       System.out.println("returning false - 4");
       return false;
     }
-    System.out.println("File size is: " + file.length());
+    // System.out.println("File size is: " + file.length());
+    String extension = FileSystemUtility.getFileExtension(url);
+    String mimeType;
+    if (extension == null) {
+      mimeType = "text/html";
+    } else {
+      mimeType = mimeTypes.getOrDefault(extension, "text/html");
+    }
     String header =
-      "HTTP/1.1 200 OK\r\nContent-Type:image/jpg\r\nConnection:close\r\nContent-Length:" +
+      "HTTP/1.1 200 OK\r\nContent-Type:" +
+      mimeType +
+      "\r\nConnection:close\r\nContent-Length:" +
       file.length() +
       "\r\n\r\n";
     OutputStream outputStream = clientSocket.getOutputStream();
