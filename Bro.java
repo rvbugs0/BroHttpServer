@@ -261,7 +261,44 @@ class Error {
 
 class Request {
 
-  public Request(String methodName, String host, String httpVersion) {}
+  private String methodName;
+  private String host;
+  private String httpVersion;
+  private Map<String, String> requestDataMap = new HashMap<String, String>();
+
+  public Request(
+    String methodName,
+    String host,
+    String httpVersion,
+    String queryString
+  ) {
+    createRequestDataMap(queryString);
+  }
+
+  private void createRequestDataMap(String queryString) {
+    if (queryString == null) {
+      return;
+    }
+    int equalIndex = -1;
+    int ampIndex = -1;
+    while ((equalIndex = queryString.indexOf("=")) != -1) {
+      String key = queryString.substring(0, equalIndex);
+      String value = null;
+      ampIndex = queryString.indexOf("&", equalIndex);
+      if (ampIndex != -1) {
+        //has an &
+        value = queryString.substring(equalIndex + 1, ampIndex);
+        requestDataMap.put(key, value);
+        queryString = queryString.substring(ampIndex+1, queryString.length());
+        System.out.println("Map Entry: Key="+key+" value="+value);
+      } else {
+        value = queryString.substring(equalIndex + 1, queryString.length());
+        requestDataMap.put(key, value);
+        System.out.println("Map Entry: Key="+key+" value="+value);
+        break;
+      }
+    }
+  }
 }
 
 class Response {
@@ -456,6 +493,13 @@ class Bro {
           }
 
           String url = splits[1];
+          String queryString = null;
+          int questionMarkIndex = url.indexOf("?");
+          if (questionMarkIndex != -1) {
+            queryString = url.substring(questionMarkIndex + 1, url.length());
+            url = url.substring(0, questionMarkIndex);
+          }
+
           if (!urlMappings.containsKey(url)) {
             //404
             if (!serveStaticResource(clientSocket, url)) {
@@ -482,7 +526,7 @@ class Bro {
             continue;
           }
 
-          Request request = new Request(methodName, url, protocol);
+          Request request = new Request(methodName, url, protocol, queryString);
           Response response = new Response();
           urlMapping.getMappedFunction().accept(request, response);
 
@@ -555,6 +599,29 @@ class WebDev {
                 <li>Ramesh</li>
                 <li>Suresh</li>
                 </ul>
+            </body>
+            </html>
+        """;
+          response.setContentType("text/html");
+          response.append(html);
+        }
+      );
+
+      bro.get(
+        "/save_test1_data",
+        (Request request, Response response) -> {
+          String html =
+            """
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8" />
+                <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+                <title>Test Result - GET with query String</title>
+            </head>
+            <body>
+                <h1>Data Saved</h1>
+                
             </body>
             </html>
         """;
