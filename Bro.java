@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.net.URLDecoder;
 
 class FileSystemUtility {
 
@@ -43,6 +44,19 @@ class FileSystemUtility {
 class BroUtilities {
 
   private BroUtilities() {}
+
+  public static String decode(String encodedString){
+    String decodedValue;
+        try{
+          decodedValue = URLDecoder.decode(encodedString,"UTF-8");
+
+        }
+        catch(Exception e){
+          decodedValue = null;
+
+        }
+        return decodedValue;
+  }
 
   public static Map<String, String> loadMIMETypes() {
     Map<String, String> mimeTypes = new HashMap<String, String>();
@@ -287,14 +301,21 @@ class Request {
       ampIndex = queryString.indexOf("&", equalIndex);
       if (ampIndex != -1) {
         //has an &
-        value = queryString.substring(equalIndex + 1, ampIndex);
+        value = BroUtilities.decode(queryString.substring(equalIndex + 1, ampIndex));
         requestDataMap.put(key, value);
         queryString = queryString.substring(ampIndex+1, queryString.length());
+        
         System.out.println("Map Entry: Key="+key+" value="+value);
+
+
       } else {
-        value = queryString.substring(equalIndex + 1, queryString.length());
-        requestDataMap.put(key, value);
+        
+        value = BroUtilities.decode(queryString.substring(equalIndex + 1, queryString.length()));
+        requestDataMap.put(key,value);
+        
         System.out.println("Map Entry: Key="+key+" value="+value);
+
+
         break;
       }
     }
